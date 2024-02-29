@@ -4,11 +4,13 @@ class BoidObj {
     y: number;
     vx: number; 
     vy: number;
-    constructor(x:number,y:number) {
+    biasval: number;
+    constructor(x:number,y:number, vx:number, vy:number, biasval:number) {
         this.x = x ;
         this.y = y;
-        this.vx = 0;
-        this.vy = 0;
+        this.vx = vx;
+        this.vy = vy;
+        this.biasval = biasval;
     }
     
 
