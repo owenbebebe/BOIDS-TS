@@ -1,98 +1,110 @@
 // Code: Create a new boid object and div element
-import React, {
-  Dispatch,
-  SetStateAction,
-  FC,
-  useEffect,
-  useState,
-  useRef,
-} from "react";
+import React, { FC, useEffect, useState, useRef } from "react";
 import { BoidObj } from "../obj/boid";
 
 interface BoidProps {
   boidNum: number;
+  screenWidth: number;
+  screenHeight: number;
+}
+
+interface DotProps {
+  x: number;
+  y: number;
+  radius: number;
+  color: string;
 }
 
 // GLOBAL VARIABLES
-let boidsState: Array<BoidObj> = new Array(100);
+let boidsState: Array<BoidObj> = new Array(1500);
 
-const Boid: FC<BoidProps> = ({ boidNum }) => {
+const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
+  // initiate the the ref element
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   // Usage example
-  const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
-  const [screenHeight, setScreenHeight] = useState<number>(window.innerHeight);
-  const [AVOIDFACTOR, setAvoidFactor] = useState<number>(0.04);
-  const [MATCHINGFACTOR, setMatchingFactor] = useState<number>(0.05);
-  const [CENTERINGFACTOR, setCenteringFactor] = useState<number>(0.005);
-  const [PROTECTED_DISTANCE, setProtectedDistance] = useState<number>(20);
-  const [VISUAL_RANGE, setVisualRange] = useState<number>(40);
+  const [AVOIDFACTOR, setAvoidFactor] = useState<number>(0.08);
+  const [MATCHINGFACTOR, setMatchingFactor] = useState<number>(0.1);
+  const [CENTERINGFACTOR, setCenteringFactor] = useState<number>(0.008);
+  const [PROTECTED_DISTANCE, setProtectedDistance] = useState<number>(80);
+  const [VISUAL_RANGE, setVisualRange] = useState<number>(1000);
   const [MINSPEED, setMinSpeed] = useState<number>(2);
   const [MAXSPEED, setMaxSpeed] = useState<number>(4);
   const [MAXBIAS, setMaxBias] = useState<number>(0.01);
-  const [BIAS_INCREMENT, setBiasIncrement] = useState<number>(0.00004);
-  const [BIASVAL, setBiasVal] = useState<number>(0.0);
-  const [TURNFACTOR, setTurnFactor] = useState<number>(0.2);
-  // const [boidsState, setBoidsState] = useState<Array<BoidObj>>([]);
-  // const [boidsState, setBoidsState] = useState<Array<BoidObj>>(() => {
-  //   let initialBoids = [];
-  //   if (hasMounted == 0) {
-  //     hasMounted = 1;
-  //   } else if (hasMounted == 1) {
-  //     for (let i = 0; i < boidNum; i++) {
-  //       const x = Math.floor(Math.random() * 100);
-  //       const y = Math.floor(Math.random() * 100);
-  //       initialBoids.push(new BoidObj(x, y, 0, 0, BIASVAL));
-  //     }
-  //     hasMounted = 2;
-  //   }
-  //   console.log("boidsState", initialBoids);
-  //   return initialBoids;
-  // });
-
-  const initialBoids = () => {
-    for (let i = 0; i < boidNum; i++) {
-      const x = Math.floor(Math.random() * 100);
-      const y = Math.floor(Math.random() * 100);
-      //create a div element
-      const boidDiv = document.createElement("div");
-      //give it a class name
-      boidDiv.className = "boid";
-      boidDiv.style.transform = `translate(${x}px, ${y}px)`;
-      //append it to the div with the id "boid-container"
-      const env = document.getElementById("environment");
-      env?.appendChild(boidDiv);
-      boidsState[i] = new BoidObj(x, y, 0, 0, BIASVAL);
+  const [BIAS_INCREMENT, setBiasIncrement] = useState<number>(0.0001);
+  const [BIASVAL, setBiasVal] = useState<number>(0.001);
+  const [TURNFACTOR, setTurnFactor] = useState<number>(0.3);
+  const [r, setRadius] = useState<number>(1);
+  const initCanvas = () => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const parent = canvas.parentElement;
+      if (parent) {
+        canvas.width = parent.clientWidth;
+        canvas.height = parent.clientHeight;
+      }
     }
-    console.log("init", boidsState);
+  };
+  //drawing a dot inside the canvas
+  const drawDot = (
+    canvasRef: React.RefObject<HTMLCanvasElement>,
+    props: DotProps
+  ) => {
+    const { x, y, radius, color } = props;
+    const ctx = canvasRef.current?.getContext("2d");
+
+    if (ctx) {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, 2 * Math.PI);
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
   };
 
-  const clearDiv = () => {
-    const env = document.getElementById("environment");
-    //clear every div inside the environment
-    while (env?.firstChild) {
-      env.removeChild(env.firstChild);
+  // First thing first translate the div generation part to a canvas element
+  const initialBoids = () => {
+    for (let i = 0; i < boidNum; i++) {
+      const x = Math.floor(Math.random() * 200 + 100);
+      const y = Math.floor(Math.random() * 200 + 100);
+      //create a div element
+      boidsState[i] = new BoidObj(x, y, 0, 0, BIASVAL);
+      drawDot(canvasRef, { x: x, y: y, radius: r, color: "black" });
+    }
+    clearCanvas();
+  };
+
+  const clearCanvas = () => {
+    const ctx = canvasRef.current?.getContext("2d");
+    if (ctx) {
+      ctx.clearRect(0, 0, screenWidth, screenHeight);
     }
   };
 
   const updateBoid = () => {
-    clearDiv();
     for (let i = 0; i < boidNum; i++) {
+      // checking the state before updating the position
       threeR(i);
-      const boidDiv = document.createElement("div");
-      //give it a class name
-      boidDiv.className = "boid";
-      boidDiv.style.transform = `translate(${boidsState[i].x}px, ${boidsState[i].y}px)`;
-      //append it to the div with the id "boid-container"
-      const env = document.getElementById("environment");
-      env?.appendChild(boidDiv);
+      // update the new position
+      drawDot(canvasRef, {
+        x: boidsState[i].x,
+        y: boidsState[i].y,
+        radius: r,
+        color: "black",
+      });
     }
   };
 
+  let framer = 0;
   const animateBoids = () => {
-    updateBoid();
+    if (framer % 2 == 0) {
+      clearCanvas();
+      updateBoid();
+    }
+    framer++;
     requestAnimationFrame(animateBoids);
   };
 
   useEffect(() => {
+    initCanvas();
     initialBoids();
     const animationId = requestAnimationFrame(animateBoids);
     return () => cancelAnimationFrame(animationId);
@@ -155,29 +167,24 @@ const Boid: FC<BoidProps> = ({ boidNum }) => {
         (yvel_avg - newvy) * MATCHINGFACTOR;
       // -------------------------
     }
-    let copmarex = newvx;
-    let copmarey = newvy;
     //3. Seperation update the velocity of the boid
     newvx += close_dx * AVOIDFACTOR;
     newvy += close_dy * AVOIDFACTOR;
-    if (copmarex === newvx && copmarey === newvy) {
-      console.log("yes");
-    }
     // 4. Check for turns
     // check if touched top side
-    if (newy < 100) {
+    if (newy < 200) {
       newvy = newvy + TURNFACTOR;
     }
     //check if touched bottom side
-    if (newy > screenHeight - 100) {
+    if (newy > screenHeight - 200) {
       newvy = newvy - TURNFACTOR;
     }
     //check if touched left side
-    if (newx < 100) {
+    if (newx < 200) {
       newvx = newvx + TURNFACTOR;
     }
     //check if touched right side
-    if (newx > screenWidth - 100) {
+    if (newx > screenWidth - 200) {
       newvx = newvx - TURNFACTOR;
     }
     // BIAS
@@ -214,7 +221,7 @@ const Boid: FC<BoidProps> = ({ boidNum }) => {
     boidsState[i].biasval = newbias;
   };
 
-  return <div></div>;
+  return <canvas ref={canvasRef} id="canvas"></canvas>;
 };
 
 export default Boid;

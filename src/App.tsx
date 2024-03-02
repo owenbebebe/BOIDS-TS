@@ -1,9 +1,11 @@
 import "./App.css";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Boid from "./comp/boids";
 
 function App() {
-  const [boidNum, setBoidNum] = useState<number>(100);
+  const [boidNum, setBoidNum] = useState<number>(1500);
+  const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
+  const [screenHeight, setScreenHeight] = useState<number>(window.innerHeight);
 
   const handleCreateBoid = () => {
     setBoidNum(boidNum + 1);
@@ -11,19 +13,40 @@ function App() {
     const handleDivClick = (index: number) => {
       console.log('Div', index + 1, 'clicked!');
     };
+  useEffect(() => {
+    const handleResize = () => {
+      const element = document.getElementById("environment");
+      if (element) {
+        const newWidth = element.offsetWidth;
+        const newHeight = element.offsetHeight;
+        if (newWidth !== screenWidth) {
+          setScreenWidth(newWidth);
+        }
+        if (newHeight !== screenHeight) {
+          setScreenHeight(newHeight);
+        }
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [screenWidth, screenHeight]);
   return (
-    <div className="App center">
+    <div className="App">
       {/* NavBar setting */}
-      <div className="navbar">
+      {/* <div className="navbar">
         <div className="boidbtncontainer">
           <button onClick={handleCreateBoid} className="boidbtn">
             Create Boid
           </button>
         </div>
-      </div>
+      </div> */}
       {/* environment  canvas*/}
       <div id="environment">
-        <Boid boidNum={boidNum}/> 
+        <Boid boidNum={boidNum} screenWidth={screenWidth} screenHeight={screenHeight}/> 
       </div>
     </div>
   );

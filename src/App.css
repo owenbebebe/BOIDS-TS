@@ -6,10 +6,13 @@ body {
   font-family: 'Roboto', sans-serif;
 }
 
+
 .App {
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
 }
+
 
 /* main style for boid */
 .boid {
@@ -22,11 +25,12 @@ body {
 
 #environment {
   position: relative;
-  width: calc(100% - 100px);
-  height: calc(100% - 100px);
-  border: #333 2px solid;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
   background-color: transparent;
 }
+
 
 .center {
   display: flex;
@@ -36,7 +40,7 @@ body {
 
 /* Navigation bar */
 /* make this class positioned fixed and always be on the top of the screen */
-.navbar {
+/* .navbar {
   position: fixed;
   top: 0;
   left: 0;
@@ -48,4 +52,4 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 0 1rem;
-}
+} */
