@@ -3,16 +3,10 @@ import React, { useState, useEffect } from "react";
 import Boid from "./comp/boids";
 
 function App() {
-  const [boidNum, setBoidNum] = useState<number>(1500);
+  const [boidNum, setBoidNum] = useState<number>(2000);
   const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
   const [screenHeight, setScreenHeight] = useState<number>(window.innerHeight);
 
-  const handleCreateBoid = () => {
-    setBoidNum(boidNum + 1);
-  };
-    const handleDivClick = (index: number) => {
-      console.log('Div', index + 1, 'clicked!');
-    };
   useEffect(() => {
     const handleResize = () => {
       const element = document.getElementById("environment");
@@ -46,7 +40,11 @@ function App() {
       </div> */}
       {/* environment  canvas*/}
       <div id="environment">
-        <Boid boidNum={boidNum} screenWidth={screenWidth} screenHeight={screenHeight}/> 
+        <Boid
+          boidNum={boidNum}
+          screenWidth={screenWidth}
+          screenHeight={screenHeight}
+        />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 body {
-  background-color: #f8f8f8;
+  background-color: black;
   color: #333;
   margin: 0;
   padding: 0;
@@ -11,16 +11,6 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-}
-
-
-/* main style for boid */
-.boid {
-  width: 5px;
-  height: 5px;
-  background-color: #333;
-  position: absolute;
-  border-radius: 50%;
 }
 
 #environment {

@@ -15,17 +15,22 @@ interface DotProps {
   color: string;
 }
 
-// GLOBAL VARIABLES
-let boidsState: Array<BoidObj> = new Array(1500);
+type MousePosition = {
+  x: number;
+  y: number;
+};
 
 const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
+  // GLOBAL VARIABLES
+  let boidsState: Array<BoidObj> = new Array(2000);
   // initiate the the ref element
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const hasRunRef = useRef(false);
   // Usage example
-  const [AVOIDFACTOR, setAvoidFactor] = useState<number>(0.08);
-  const [MATCHINGFACTOR, setMatchingFactor] = useState<number>(0.1);
-  const [CENTERINGFACTOR, setCenteringFactor] = useState<number>(0.008);
-  const [PROTECTED_DISTANCE, setProtectedDistance] = useState<number>(80);
+  const [AVOIDFACTOR, setAvoidFactor] = useState<number>(0.1);
+  const [MATCHINGFACTOR, setMatchingFactor] = useState<number>(0.2);
+  const [CENTERINGFACTOR, setCenteringFactor] = useState<number>(0.01);
+  const [PROTECTED_DISTANCE, setProtectedDistance] = useState<number>(125);
   const [VISUAL_RANGE, setVisualRange] = useState<number>(1000);
   const [MINSPEED, setMinSpeed] = useState<number>(2);
   const [MAXSPEED, setMaxSpeed] = useState<number>(4);
@@ -33,7 +38,9 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
   const [BIAS_INCREMENT, setBiasIncrement] = useState<number>(0.0001);
   const [BIASVAL, setBiasVal] = useState<number>(0.001);
   const [TURNFACTOR, setTurnFactor] = useState<number>(0.3);
-  const [r, setRadius] = useState<number>(1);
+  const [LIGHTCOLOR_FACTOR, setLightColorFactor] = useState<number>(0.02);
+  const [r, setRadius] = useState<number>(2);
+  let mousePosition: MousePosition = { x: 0, y: 0 };
   const initCanvas = () => {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -51,7 +58,6 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
   ) => {
     const { x, y, radius, color } = props;
     const ctx = canvasRef.current?.getContext("2d");
-
     if (ctx) {
       ctx.beginPath();
       ctx.arc(x, y, r, 0, 2 * Math.PI);
@@ -66,12 +72,12 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
       const x = Math.floor(Math.random() * 200 + 100);
       const y = Math.floor(Math.random() * 200 + 100);
       //create a div element
-      boidsState[i] = new BoidObj(x, y, 0, 0, BIASVAL);
-      drawDot(canvasRef, { x: x, y: y, radius: r, color: "black" });
+      boidsState[i] = new BoidObj(x, y, 0, 0, BIASVAL, "white");
     }
     clearCanvas();
   };
 
+  //
   const clearCanvas = () => {
     const ctx = canvasRef.current?.getContext("2d");
     if (ctx) {
@@ -79,7 +85,20 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
     }
   };
 
+  const getMousePosition = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = event.currentTarget as HTMLCanvasElement;
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // Adjust for scaling if needed
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    mousePosition = { x: x * scaleX, y: y * scaleY };
+  };
+
   const updateBoid = () => {
+    clearCanvas();
     for (let i = 0; i < boidNum; i++) {
       // checking the state before updating the position
       threeR(i);
@@ -88,26 +107,23 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
         x: boidsState[i].x,
         y: boidsState[i].y,
         radius: r,
-        color: "black",
+        color: boidsState[i].color,
       });
     }
-  };
-
-  let framer = 0;
-  const animateBoids = () => {
-    if (framer % 2 == 0) {
-      clearCanvas();
-      updateBoid();
-    }
-    framer++;
-    requestAnimationFrame(animateBoids);
   };
 
   useEffect(() => {
     initCanvas();
     initialBoids();
-    const animationId = requestAnimationFrame(animateBoids);
-    return () => cancelAnimationFrame(animationId);
+    let animationId: number | null = null;
+    const animateBoids = () => {
+      updateBoid();
+      animationId = requestAnimationFrame(animateBoids);
+    };
+    animateBoids();
+    return () => {
+      cancelAnimationFrame(animationId!);
+    };
   }, []);
 
   const threeR = (i: number) => {
@@ -210,18 +226,35 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
       newvx = (newvx / speed) * MAXSPEED;
       newvy = (newvy / speed) * MAXSPEED;
     }
+    // 1.5 whck for if the current boid is in the distance of the moouse
+    if (mousePosition) {
+      let dx = newx - mousePosition.x;
+      let dy = newy - mousePosition.y;
+      let distance = dx * dx + dy * dy;
+      if (distance < 1500) {
+        newvx += dx * MATCHINGFACTOR;
+        newvy += dy * MATCHINGFACTOR;
+      }
+    }
+    // updating the color based on how many neighboring boids there are
     // update the position of the boid
     newx += newvx;
     newy += newvy;
+    // update the boid color brightness based on the number of neighboring boids
+    let opc = neighboring_boids * LIGHTCOLOR_FACTOR;
+    // hsl(0°, 0%, 100%)
     // update the boid's state
     boidsState[i].x = newx;
     boidsState[i].y = newy;
     boidsState[i].vx = newvx;
     boidsState[i].vy = newvy;
     boidsState[i].biasval = newbias;
+    boidsState[i].color = `rgba(255,255,255,${opc})`;
   };
 
-  return <canvas ref={canvasRef} id="canvas"></canvas>;
+  return (
+    <canvas ref={canvasRef} onMouseMove={getMousePosition} id="canvas"></canvas>
+  );
 };
 
 export default Boid;
