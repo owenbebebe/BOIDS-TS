@@ -73,7 +73,6 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
       // DRAW A DOT
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, 2 * Math.PI);
-      console.log("color, ", color);
       ctx.fillStyle = color;
       ctx.fill();
       ctx.closePath();
@@ -86,10 +85,8 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
       const x = Math.floor(Math.random() * 200 + 100);
       const y = Math.floor(Math.random() * 200 + 100);
       const c: Color = {
-        r: Math.floor(Math.random() * 256),
-        g: Math.floor(Math.random() * 256),
-        b: Math.floor(Math.random() * 256),
-        a: 0.5,
+        h: Math.floor(Math.random() * 361),
+        a: 1,
       };
       //create a div element
       boidsState[i] = new BoidObj(x, y, 0, 0, BIASVAL, c);
@@ -128,7 +125,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
           x: boidsState[i].x,
           y: boidsState[i].y,
           radius: r,
-          color: boidsState[i].convertRgbToString(),
+          color: boidsState[i].convertColorToString(),
         },
         frame
       );
@@ -188,9 +185,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
             ypos_avg += other.y;
             neighboring_boids++;
             // calculate the color
-            newColor.r += other.color.r;
-            newColor.g += other.color.g;
-            newColor.b += other.color.b;
+            newColor.h += other.color.h;
           }
         }
       }
@@ -203,9 +198,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
       ypos_avg /= neighboring_boids;
       // -------------------------
       //update color
-      newColor.r = Math.round(newColor.r / neighboring_boids);
-      newColor.g = Math.round(newColor.g / neighboring_boids);
-      newColor.b = Math.round(newColor.b / neighboring_boids);
+      newColor.h = Math.round(newColor.h / neighboring_boids) * 0.5;
       boidsState[i].color = newColor;
       // -------------------------
       newvx =

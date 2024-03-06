@@ -1,8 +1,5 @@
-// create a boid object
-interface Color {
-    r: number;
-    g: number;
-    b: number;
+type Color = {
+    h: number;
     a: number;
 }
 
@@ -21,8 +18,8 @@ class BoidObj {
         this.biasval = biasval;
         this.color = color;
     }
-    convertRgbToString = () => {
-        return `rgba(${this.color.r},${this.color.g},${this.color.b}, ${this.color.a})`;
+    convertColorToString = () => {
+        return `hsla(${this.color.h},100% ,50%, ${this.color.a})`;
     }
 }
 
