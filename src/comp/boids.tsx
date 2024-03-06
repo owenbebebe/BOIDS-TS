@@ -38,7 +38,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
   const [BIAS_INCREMENT, setBiasIncrement] = useState<number>(0.0001);
   const [BIASVAL, setBiasVal] = useState<number>(0.001);
   const [TURNFACTOR, setTurnFactor] = useState<number>(0.3);
-  const [LIGHTCOLOR_FACTOR, setLightColorFactor] = useState<number>(0.03);
+  const [LIGHTCOLOR_FACTOR, setLightColorFactor] = useState<number>(0.003);
   const [r, setRadius] = useState<number>(1);
   let mousePosition: MousePosition = { x: 0, y: 0 };
   const initCanvas = () => {
@@ -114,7 +114,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
   };
 
   const updateBoid = (frame: number) => {
-    clearCanvas();
+    // clearCanvas();
     for (let i = 0; i < boidNum; i++) {
       // checking the state before updating the position
       threeR(i);
@@ -185,7 +185,6 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
             ypos_avg += other.y;
             neighboring_boids++;
             // calculate the color
-            newColor.h += other.color.h;
           }
         }
       }
@@ -196,11 +195,6 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
       yvel_avg /= neighboring_boids;
       xpos_avg /= neighboring_boids;
       ypos_avg /= neighboring_boids;
-      // -------------------------
-      //update color
-      newColor.h = Math.round(newColor.h / neighboring_boids) * 0.5;
-      boidsState[i].color = newColor;
-      // -------------------------
       newvx =
         newvx +
         (xpos_avg - newx) * CENTERINGFACTOR +
@@ -264,7 +258,11 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
         newvy += dy * MATCHINGFACTOR;
       }
     }
-    // updating the color based on how many neighboring boids there are
+    // -------------------------
+    //update color
+    boidsState[i].color.h = Math.atan(newvy / newvx) * (180 / Math.PI);
+    // console.log(boidsState[i].color.h);
+    // -------------------------
     // update the position of the boid
     newx += newvx;
     newy += newvy;
