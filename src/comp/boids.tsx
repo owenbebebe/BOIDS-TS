@@ -1,6 +1,6 @@
 // Code: Create a new boid object and div element
 import React, { FC, useEffect, useState, useRef } from "react";
-import { BoidObj } from "../obj/boid";
+import { BoidObj, Color } from "../obj/boid";
 
 interface BoidProps {
   boidNum: number;
@@ -38,8 +38,8 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
   const [BIAS_INCREMENT, setBiasIncrement] = useState<number>(0.0001);
   const [BIASVAL, setBiasVal] = useState<number>(0.001);
   const [TURNFACTOR, setTurnFactor] = useState<number>(0.3);
-  const [LIGHTCOLOR_FACTOR, setLightColorFactor] = useState<number>(0.02);
-  const [r, setRadius] = useState<number>(2);
+  const [LIGHTCOLOR_FACTOR, setLightColorFactor] = useState<number>(0.03);
+  const [r, setRadius] = useState<number>(1);
   let mousePosition: MousePosition = { x: 0, y: 0 };
   const initCanvas = () => {
     const canvas = canvasRef.current;
@@ -54,15 +54,29 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
   //drawing a dot inside the canvas
   const drawDot = (
     canvasRef: React.RefObject<HTMLCanvasElement>,
-    props: DotProps
+    props: DotProps,
+    frame: number
   ) => {
-    const { x, y, radius, color } = props;
+    let { x, y, radius, color } = props;
     const ctx = canvasRef.current?.getContext("2d");
     if (ctx) {
+      //----------------
+      // DRAW A LINE
+      // ctx.beginPath();
+      // ctx.strokeStyle = color;
+      // ctx.moveTo(x, y);
+      // x = x + Math.sin(frame * 0.05) * 100;
+      // y = y + Math.cos(frame * 0.05) * 100;
+      // ctx.lineTo(x, y);
+      // ctx.stroke();
+      // ----------------
+      // DRAW A DOT
       ctx.beginPath();
-      ctx.arc(x, y, r, 0, 2 * Math.PI);
+      ctx.arc(x, y, radius, 0, 2 * Math.PI);
+      console.log("color, ", color);
       ctx.fillStyle = color;
       ctx.fill();
+      ctx.closePath();
     }
   };
 
@@ -71,10 +85,15 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
     for (let i = 0; i < boidNum; i++) {
       const x = Math.floor(Math.random() * 200 + 100);
       const y = Math.floor(Math.random() * 200 + 100);
+      const c: Color = {
+        r: Math.floor(Math.random() * 256),
+        g: Math.floor(Math.random() * 256),
+        b: Math.floor(Math.random() * 256),
+        a: 0.5,
+      };
       //create a div element
-      boidsState[i] = new BoidObj(x, y, 0, 0, BIASVAL, "white");
+      boidsState[i] = new BoidObj(x, y, 0, 0, BIASVAL, c);
     }
-    clearCanvas();
   };
 
   //
@@ -97,27 +116,33 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
     mousePosition = { x: x * scaleX, y: y * scaleY };
   };
 
-  const updateBoid = () => {
+  const updateBoid = (frame: number) => {
     clearCanvas();
     for (let i = 0; i < boidNum; i++) {
       // checking the state before updating the position
       threeR(i);
       // update the new position
-      drawDot(canvasRef, {
-        x: boidsState[i].x,
-        y: boidsState[i].y,
-        radius: r,
-        color: boidsState[i].color,
-      });
+      drawDot(
+        canvasRef,
+        {
+          x: boidsState[i].x,
+          y: boidsState[i].y,
+          radius: r,
+          color: boidsState[i].convertRgbToString(),
+        },
+        frame
+      );
     }
   };
 
   useEffect(() => {
     initCanvas();
     initialBoids();
+    let frame = 0;
     let animationId: number | null = null;
     const animateBoids = () => {
-      updateBoid();
+      updateBoid(frame);
+      frame++;
       animationId = requestAnimationFrame(animateBoids);
     };
     animateBoids();
@@ -141,6 +166,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
     let newvx = bs.vx;
     let newvy = bs.vy;
     let newbias = bs.biasval;
+    let newColor = bs.color;
 
     //2. loop through all boids if the distance to another boid is less than visual range
     for (let i = 0; i < boidNum; i++) {
@@ -161,6 +187,10 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
             xpos_avg += other.x;
             ypos_avg += other.y;
             neighboring_boids++;
+            // calculate the color
+            newColor.r += other.color.r;
+            newColor.g += other.color.g;
+            newColor.b += other.color.b;
           }
         }
       }
@@ -171,7 +201,12 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
       yvel_avg /= neighboring_boids;
       xpos_avg /= neighboring_boids;
       ypos_avg /= neighboring_boids;
-
+      // -------------------------
+      //update color
+      newColor.r = Math.round(newColor.r / neighboring_boids);
+      newColor.g = Math.round(newColor.g / neighboring_boids);
+      newColor.b = Math.round(newColor.b / neighboring_boids);
+      boidsState[i].color = newColor;
       // -------------------------
       newvx =
         newvx +
@@ -242,14 +277,13 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
     newy += newvy;
     // update the boid color brightness based on the number of neighboring boids
     let opc = neighboring_boids * LIGHTCOLOR_FACTOR;
-    // hsl(0°, 0%, 100%)
     // update the boid's state
     boidsState[i].x = newx;
     boidsState[i].y = newy;
     boidsState[i].vx = newvx;
     boidsState[i].vy = newvy;
     boidsState[i].biasval = newbias;
-    boidsState[i].color = `rgba(255,255,255,${opc})`;
+    boidsState[i].color.a = opc;
   };
 
   return (
