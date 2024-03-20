@@ -1,6 +1,6 @@
 type Color = {
-    h: number;
-    a: number;
+    h:number; 
+    a:number;
 }
 
 class BoidObj {
@@ -19,7 +19,7 @@ class BoidObj {
         this.color = color;
     }
     convertColorToString = () => {
-        return `hsla(${this.color.h},100% ,50%, ${this.color.a})`;
+        return `hsla(${this.color.h},100%,50%,${this.color.a})`;
     }
 }
 

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import Boid from "./comp/boids";
 
 function App() {
-  const [boidNum, setBoidNum] = useState<number>(2000);
+  const [boidNum, setBoidNum] = useState<number>(1500);
   const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
   const [screenHeight, setScreenHeight] = useState<number>(window.innerHeight);
 

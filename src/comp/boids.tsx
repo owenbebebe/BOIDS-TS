@@ -1,6 +1,7 @@
 // Code: Create a new boid object and div element
 import React, { FC, useEffect, useState, useRef } from "react";
 import { BoidObj, Color } from "../obj/boid";
+import { group } from "console";
 
 interface BoidProps {
   boidNum: number;
@@ -20,25 +21,27 @@ type MousePosition = {
   y: number;
 };
 
+let boidsState: Array<BoidObj> = new Array(1500);
+
 const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
   // GLOBAL VARIABLES
-  let boidsState: Array<BoidObj> = new Array(2000);
   // initiate the the ref element
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const hasRunRef = useRef(false);
   // Usage example
   const [AVOIDFACTOR, setAvoidFactor] = useState<number>(0.1);
   const [MATCHINGFACTOR, setMatchingFactor] = useState<number>(0.2);
   const [CENTERINGFACTOR, setCenteringFactor] = useState<number>(0.01);
   const [PROTECTED_DISTANCE, setProtectedDistance] = useState<number>(125);
   const [VISUAL_RANGE, setVisualRange] = useState<number>(1000);
+  const [GROUP_RANGE, setGroupRange] = useState<number>(500);
   const [MINSPEED, setMinSpeed] = useState<number>(2);
   const [MAXSPEED, setMaxSpeed] = useState<number>(4);
   const [MAXBIAS, setMaxBias] = useState<number>(0.01);
   const [BIAS_INCREMENT, setBiasIncrement] = useState<number>(0.0001);
-  const [BIASVAL, setBiasVal] = useState<number>(0.001);
+  const [BIASVAL, setBiasVal] = useState<number>(0.01);
   const [TURNFACTOR, setTurnFactor] = useState<number>(0.3);
-  const [LIGHTCOLOR_FACTOR, setLightColorFactor] = useState<number>(0.003);
+  const [LIGHTCOLOR_FACTOR, setLightColorFactor] = useState<number>(0.03);
+  const [COLOR_WEIGHT, setColorWeight] = useState<number>(0.02);
   const [r, setRadius] = useState<number>(1);
   let mousePosition: MousePosition = { x: 0, y: 0 };
   const initCanvas = () => {
@@ -54,8 +57,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
   //drawing a dot inside the canvas
   const drawDot = (
     canvasRef: React.RefObject<HTMLCanvasElement>,
-    props: DotProps,
-    frame: number
+    props: DotProps
   ) => {
     let { x, y, radius, color } = props;
     const ctx = canvasRef.current?.getContext("2d");
@@ -85,7 +87,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
       const x = Math.floor(Math.random() * 200 + 100);
       const y = Math.floor(Math.random() * 200 + 100);
       const c: Color = {
-        h: Math.floor(Math.random() * 361),
+        h: Math.floor(Math.random() * 360), //Math.floor(Math.random() * 256
         a: 1,
       };
       //create a div element
@@ -114,21 +116,33 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
   };
 
   const updateBoid = (frame: number) => {
-    // clearCanvas();
+    clearCanvas();
+    let c_prime: Set<number> = new Set();
+    // Create C’ set of every boids number 0 - 2000
     for (let i = 0; i < boidNum; i++) {
+      c_prime.add(i);
+    }
+    for (let i = 0; i < boidNum; i++) {
+      let in_c: Boolean = false;
+      //If i is in C’ <- we know that we found a new group leader
+      if (c_prime.has(i)) {
+        in_c = true;
+        //remove i from c_prime
+        c_prime.delete(i);
+        // update its color
+        boidsState[i].color.h =
+          Math.sin(frame * 0.00001) * 360 + boidsState[i].color.h * 1;
+      }
       // checking the state before updating the position
-      threeR(i);
+      threeR(i, c_prime, in_c);
+      // update the color gradient
       // update the new position
-      drawDot(
-        canvasRef,
-        {
-          x: boidsState[i].x,
-          y: boidsState[i].y,
-          radius: r,
-          color: boidsState[i].convertColorToString(),
-        },
-        frame
-      );
+      drawDot(canvasRef, {
+        x: boidsState[i].x,
+        y: boidsState[i].y,
+        radius: r,
+        color: boidsState[i].convertColorToString(),
+      });
     }
   };
 
@@ -148,8 +162,8 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
     };
   }, []);
 
-  const threeR = (i: number) => {
-    let bs = boidsState[i];
+  const threeR = (i: number, c_prime: Set<number>, in_c: Boolean) => {
+    let bs: BoidObj = boidsState[i];
     //1. initialize = 0
     let close_dx: number = 0;
     let close_dy: number = 0;
@@ -158,23 +172,40 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
     let xpos_avg: number = 0;
     let ypos_avg: number = 0;
     let neighboring_boids: number = 0;
-    let newx = bs.x;
-    let newy = bs.y;
-    let newvx = bs.vx;
-    let newvy = bs.vy;
-    let newbias = bs.biasval;
-    let newColor = bs.color;
+    let newx: number = bs.x;
+    let newy: number = bs.y;
+    let newvx: number = bs.vx;
+    let newvy: number = bs.vy;
+    let newbias: number = bs.biasval;
 
     //2. loop through all boids if the distance to another boid is less than visual range
-    for (let i = 0; i < boidNum; i++) {
-      let other = boidsState[i];
+    for (let j = 0; j < boidNum; j++) {
+      let other: BoidObj = boidsState[j];
       if (other !== bs) {
-        let dx = newx - other.x;
+        let dx: number = newx - other.x;
         let dy = newy - other.y;
         // check if absolute distance is less than visual range
         if (Math.abs(dx) < VISUAL_RANGE && Math.abs(dy) < VISUAL_RANGE) {
           let distance = dx * dx + dy * dy;
-          //for seperation
+          if (in_c) {
+            if (distance <= GROUP_RANGE && c_prime.has(j)) {
+              //remove j from c_prime
+              c_prime.delete(j);
+              // check if the distnace is neg or positive
+              // we know that it is a neg val
+              if (distance / 2 < 250) {
+                boidsState[j].color.h =
+                  -1 * ((distance / 2) * COLOR_WEIGHT) + bs.color.h;
+              } else {
+                boidsState[j].color.h =
+                  (distance / 2) * COLOR_WEIGHT + bs.color.h;
+              }
+            } else if (distance <= GROUP_RANGE) {
+              // we perform a merge function
+              boidsState[j].color.h = (boidsState[j].color.h + bs.color.h) / 2;
+            }
+          }
+          // for seperation
           if (distance <= PROTECTED_DISTANCE) {
             close_dx += dx;
             close_dy += dy;
@@ -203,6 +234,9 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
         newvy +
         (ypos_avg - newy) * CENTERINGFACTOR +
         (yvel_avg - newvy) * MATCHINGFACTOR;
+      // -------------------------
+      // update the colo
+      // newColor = Math.atan(newvy / newvx) * (180 / Math.PI);
       // -------------------------
     }
     //3. Seperation update the velocity of the boid
@@ -259,8 +293,6 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
       }
     }
     // -------------------------
-    //update color
-    boidsState[i].color.h = Math.atan(newvy / newvx) * (180 / Math.PI);
     // console.log(boidsState[i].color.h);
     // -------------------------
     // update the position of the boid
@@ -275,6 +307,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
     boidsState[i].vy = newvy;
     boidsState[i].biasval = newbias;
     boidsState[i].color.a = opc;
+    // boidsState[i].color.h = newColor;
   };
 
   return (

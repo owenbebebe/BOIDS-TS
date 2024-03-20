@@ -1,0 +1,23 @@
+#ALgo
+unioFind = {} #mapping
+#create a hash table ? 
+    
+for i in range(2000):
+    for j in range(2000):
+        #array of alpha colors
+        if i != j:
+            other = boids[j]
+            #here to implement inside the same group
+            distance = other.position - boids[i].position
+            if distance <= GROUPRANGE:
+                #we know that they could be in the same group
+                if other.alpha != -1:
+                    #how do I update the alpha boid ? in what way ???
+                    other.push(boids[other.alpha])
+    if empty of array:
+        #we assign a color to it
+        #becomes its own alpha
+    if alpha list length is more than 1:
+        become its own alpha
+    if alpha list lenth == 1:
+        boids.alpha = alpha[that number]
