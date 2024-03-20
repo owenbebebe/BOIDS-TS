@@ -131,7 +131,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
         c_prime.delete(i);
         // update its color
         boidsState[i].color.h =
-          Math.sin(frame * 0.00001) * 360 + boidsState[i].color.h * 1;
+          Math.sin(frame * 0.000005) * 360 + boidsState[i].color.h * 1;
       }
       // checking the state before updating the position
       threeR(i, c_prime, in_c);
