@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/owenbebebe/BOIDS-TS.git/static/css/main.b82bee19.css",
+    "main.js": "/owenbebebe/BOIDS-TS.git/static/js/main.dc70c227.js",
+    "static/js/453.60054328.chunk.js": "/owenbebebe/BOIDS-TS.git/static/js/453.60054328.chunk.js",
+    "index.html": "/owenbebebe/BOIDS-TS.git/index.html",
+    "main.b82bee19.css.map": "/owenbebebe/BOIDS-TS.git/static/css/main.b82bee19.css.map",
+    "main.dc70c227.js.map": "/owenbebebe/BOIDS-TS.git/static/js/main.dc70c227.js.map",
+    "453.60054328.chunk.js.map": "/owenbebebe/BOIDS-TS.git/static/js/453.60054328.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.b82bee19.css",
+    "static/js/main.dc70c227.js"
+  ]
+}
