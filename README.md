@@ -1,3 +1,13 @@
+# Preview
+<div align="center">
+  <a href="https://owenbebebe.github.io/BOIDS-TS/">Click here to the website !!!</a >
+</div>
+
+<div align="center" style="margin-top: 10px;">
+  <image  src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYzdiMGE1aWFwNGwybWx0aGEyMHU4dW1yOXZ0ZTNja3E1NjFuMTIzMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/mKuRV1FKTb99FaAqBW/giphy-downsized-large.gif">
+</image>
+</div>
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
