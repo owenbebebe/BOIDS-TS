@@ -33,15 +33,15 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
   const [CENTERINGFACTOR, setCenteringFactor] = useState<number>(0.01);
   const [PROTECTED_DISTANCE, setProtectedDistance] = useState<number>(125);
   const [VISUAL_RANGE, setVisualRange] = useState<number>(1000);
-  const [GROUP_RANGE, setGroupRange] = useState<number>(500);
+  const [GROUP_RANGE, setGroupRange] = useState<number>(10000);
   const [MINSPEED, setMinSpeed] = useState<number>(2);
   const [MAXSPEED, setMaxSpeed] = useState<number>(4);
   const [MAXBIAS, setMaxBias] = useState<number>(0.01);
   const [BIAS_INCREMENT, setBiasIncrement] = useState<number>(0.0001);
   const [BIASVAL, setBiasVal] = useState<number>(0.01);
   const [TURNFACTOR, setTurnFactor] = useState<number>(0.3);
-  const [LIGHTCOLOR_FACTOR, setLightColorFactor] = useState<number>(0.03);
-  const [COLOR_WEIGHT, setColorWeight] = useState<number>(0.02);
+  const [LIGHTCOLOR_FACTOR, setLightColorFactor] = useState<number>(0.1);
+  const [COLOR_WEIGHT, setColorWeight] = useState<number>(0.001);
   const [r, setRadius] = useState<number>(1);
   let mousePosition: MousePosition = { x: 0, y: 0 };
   const initCanvas = () => {
@@ -115,6 +115,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
     mousePosition = { x: x * scaleX, y: y * scaleY };
   };
 
+  let c_prime: Set<number> = new Set();
   const updateBoid = (frame: number) => {
     clearCanvas();
     let c_prime: Set<number> = new Set();
@@ -129,17 +130,22 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
         in_c = true;
         //remove i from c_prime
         c_prime.delete(i);
-        // update its color
+        // update its colorq
+        // sin(x)
         boidsState[i].color.h =
-          Math.sin(frame * 0.000005) * 360 + boidsState[i].color.h * 1;
+          (Math.sin(frame * Math.PI) + 1) * boidsState[i].color.h;
+        console.log(boidsState[i].color.h);
       }
       // checking the state before updating the position
-      threeR(i, c_prime, in_c);
+      threeR(i, c_prime, in_c, frame);
       // update the color gradient
       // update the new position
       drawDot(canvasRef, {
         x: boidsState[i].x,
         y: boidsState[i].y,
+        // mark alpha as bigger
+        // radius: in_c ? 3 : 1,
+        // universal mark
         radius: r,
         color: boidsState[i].convertColorToString(),
       });
@@ -162,7 +168,12 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
     };
   }, []);
 
-  const threeR = (i: number, c_prime: Set<number>, in_c: Boolean) => {
+  const threeR = (
+    i: number,
+    c_prime: Set<number>,
+    in_c: Boolean,
+    frame: number
+  ) => {
     let bs: BoidObj = boidsState[i];
     //1. initialize = 0
     let close_dx: number = 0;
@@ -193,7 +204,7 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
               c_prime.delete(j);
               // check if the distnace is neg or positive
               // we know that it is a neg val
-              if (distance / 2 < 250) {
+              if (distance / 2 < 5000) {
                 boidsState[j].color.h =
                   -1 * ((distance / 2) * COLOR_WEIGHT) + bs.color.h;
               } else {
@@ -202,7 +213,9 @@ const Boid: FC<BoidProps> = ({ boidNum, screenWidth, screenHeight }) => {
               }
             } else if (distance <= GROUP_RANGE) {
               // we perform a merge function
-              boidsState[j].color.h = (boidsState[j].color.h + bs.color.h) / 2;
+              boidsState[j].color.h =
+                ((boidsState[j].color.h + bs.color.h) / 2) *
+                (Math.sin(frame * Math.PI) + 1);
             }
           }
           // for seperation
